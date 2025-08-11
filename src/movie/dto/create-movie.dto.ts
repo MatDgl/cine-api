@@ -1,6 +1,6 @@
 export class CreateMovieDto {
   title: string;
-  src: string;
+  src?: string;
   rating?: number;
   wishlist?: boolean;
 }
