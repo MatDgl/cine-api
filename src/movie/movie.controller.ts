@@ -22,8 +22,18 @@ export class MovieController {
   }
 
   @Get()
-  findAll(): Promise<Movie[]> {
+  findAll() {
     return this.movieService.findAll();
+  }
+
+  @Get('wishlist')
+  findWishlist() {
+    return this.movieService.findWishlist();
+  }
+
+  @Get('non-wishlist')
+  findNonWishlist() {
+    return this.movieService.findNonWishlist();
   }
 
   @Get(':id')

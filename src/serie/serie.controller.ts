@@ -22,8 +22,18 @@ export class SerieController {
   }
 
   @Get()
-  findAll(): Promise<Serie[]> {
+  findAll() {
     return this.serieService.findAll();
+  }
+
+  @Get('wishlist')
+  findWishlist() {
+    return this.serieService.findWishlist();
+  }
+
+  @Get('non-wishlist')
+  findNonWishlist() {
+    return this.serieService.findNonWishlist();
   }
 
   @Get(':id')
