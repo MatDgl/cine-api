@@ -3,10 +3,14 @@ import { PrismaService } from '../prisma.service';
 import { CreateSerieDto } from './dto/create-serie.dto';
 import { UpdateSerieDto } from './dto/update-serie.dto';
 import { Serie } from '@prisma/client';
+import { TmdbService, TmdbSerie } from '../tmdb/tmdb.service';
 
 @Injectable()
 export class SerieService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tmdb: TmdbService,
+  ) {}
 
   create(data: CreateSerieDto): Promise<Serie> {
     return this.prisma.serie.create({ data });
@@ -26,7 +30,7 @@ export class SerieService {
       }),
       this.prisma.serie.count({
         where: {
-          AND: [{ src: { not: null } }, { src: { not: '' } }],
+          AND: [{ tmdbId: { not: null } }],
         },
       }),
       this.prisma.serie.count({ where: { rating: null } }),
@@ -65,11 +69,7 @@ export class SerieService {
       }),
       this.prisma.serie.count({
         where: {
-          AND: [
-            { wishlist: true },
-            { src: { not: null } },
-            { src: { not: '' } },
-          ],
+          AND: [{ wishlist: true }, { tmdbId: { not: null } }],
         },
       }),
       this.prisma.serie.count({ where: { wishlist: true, rating: null } }),
@@ -108,11 +108,7 @@ export class SerieService {
       }),
       this.prisma.serie.count({
         where: {
-          AND: [
-            { wishlist: false },
-            { src: { not: null } },
-            { src: { not: '' } },
-          ],
+          AND: [{ wishlist: false }, { tmdbId: { not: null } }],
         },
       }),
       this.prisma.serie.count({ where: { wishlist: false, rating: null } }),
@@ -137,8 +133,18 @@ export class SerieService {
     } as const;
   }
 
-  findOne(id: number): Promise<Serie | null> {
-    return this.prisma.serie.findUnique({ where: { id } });
+  async findOne(id: number): Promise<(Serie & { tmdb?: TmdbSerie }) | null> {
+    const serie = await this.prisma.serie.findUnique({ where: { id } });
+    if (!serie) return null;
+    if (serie.tmdbId == null) return serie;
+
+    try {
+      const details = await this.tmdb.getSerieDetails(serie.tmdbId);
+      return { ...serie, tmdb: details } as const;
+    } catch (e) {
+      console.error('Failed to fetch TMDB details:', e);
+      return serie;
+    }
   }
 
   update(id: number, data: UpdateSerieDto): Promise<Serie> {

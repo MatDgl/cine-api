@@ -6,15 +6,20 @@ import {
   Put,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { SerieService } from './serie.service';
+import { TmdbService, TmdbSerie } from '../tmdb/tmdb.service';
 import { CreateSerieDto } from './dto/create-serie.dto';
 import { UpdateSerieDto } from './dto/update-serie.dto';
 import { Serie } from '@prisma/client';
 
 @Controller('serie')
 export class SerieController {
-  constructor(private readonly serieService: SerieService) {}
+  constructor(
+    private readonly serieService: SerieService,
+    private readonly tmdb: TmdbService,
+  ) {}
 
   @Post()
   create(@Body() createSerieDto: CreateSerieDto): Promise<Serie> {
@@ -34,6 +39,17 @@ export class SerieController {
   @Get('non-wishlist')
   findNonWishlist() {
     return this.serieService.findNonWishlist();
+  }
+
+  // TMDB proxies
+  @Get('search')
+  searchFromTmdb(@Query('q') q: string) {
+    return this.tmdb.searchSeries(q ?? '');
+  }
+
+  @Get('tmdb/:tmdbId')
+  getTmdbSerie(@Param('tmdbId') tmdbId: string): Promise<TmdbSerie> {
+    return this.tmdb.getSerieDetails(Number(tmdbId));
   }
 
   @Get(':id')

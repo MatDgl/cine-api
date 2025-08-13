@@ -16,9 +16,12 @@ datasource db {
 model Movie {
   id        Int      @id @default(autoincrement())
   title     String
-  src       String?
+  tmdbId    Int?     @unique
   rating    Float?
   wishlist  Boolean  @default(false)
+  review    String?
+  viewCount Int      @default(0)
+  watched   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -26,9 +29,12 @@ model Movie {
 model Serie {
   id        Int      @id @default(autoincrement())
   title     String
-  src       String?
+  tmdbId    Int?     @unique
   rating    Float?
   wishlist  Boolean  @default(false)
+  review    String?
+  viewCount Int      @default(0)
+  watched   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

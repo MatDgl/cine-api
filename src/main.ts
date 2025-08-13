@@ -1,5 +1,28 @@
 import { NestFactory } from '@nestjs/core';
+import 'dotenv/config';
+import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { AppModule } from './app.module';
+
+// Configure un proxy global pour fetch si défini dans l'environnement
+(() => {
+  const proxyUrl =
+    process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.ALL_PROXY;
+  if (proxyUrl) {
+    try {
+      setGlobalDispatcher(new ProxyAgent(proxyUrl));
+      const masked = proxyUrl.replace(
+        /(https?:\/\/)([^:@]*):[^@]*@/,
+        '$1$2:***@',
+      );
+      console.log(`[network] Proxy sortant activé: ${masked}`);
+      if (process.env.NO_PROXY) {
+        console.log(`[network] NO_PROXY: ${process.env.NO_PROXY}`);
+      }
+    } catch (e) {
+      console.warn('[network] Échec configuration du proxy sortant:', e);
+    }
+  }
+})();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,7 +46,10 @@ async function bootstrap() {
     credentials: false,
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+
+  console.log(`🚀 API accessible sur: http://localhost:${port}`);
 }
 
 bootstrap().catch((err) => {

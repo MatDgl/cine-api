@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { PrismaService } from '../prisma.service';
 import { Movie } from '@prisma/client';
+import { TmdbService, TmdbMovie } from '../tmdb/tmdb.service';
 
 @Injectable()
 export class MovieService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(MovieService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tmdb: TmdbService,
+  ) {}
 
   create(data: CreateMovieDto): Promise<Movie> {
     return this.prisma.movie.create({ data });
@@ -26,7 +32,7 @@ export class MovieService {
       }),
       this.prisma.movie.count({
         where: {
-          AND: [{ src: { not: null } }, { src: { not: '' } }],
+          AND: [{ tmdbId: { not: null } }],
         },
       }),
       this.prisma.movie.count({ where: { rating: null } }),
@@ -66,11 +72,7 @@ export class MovieService {
       }),
       this.prisma.movie.count({
         where: {
-          AND: [
-            { wishlist: true },
-            { src: { not: null } },
-            { src: { not: '' } },
-          ],
+          AND: [{ wishlist: true }, { tmdbId: { not: null } }],
         },
       }),
       this.prisma.movie.count({ where: { wishlist: true, rating: null } }),
@@ -110,11 +112,7 @@ export class MovieService {
       }),
       this.prisma.movie.count({
         where: {
-          AND: [
-            { wishlist: false },
-            { src: { not: null } },
-            { src: { not: '' } },
-          ],
+          AND: [{ wishlist: false }, { tmdbId: { not: null } }],
         },
       }),
       this.prisma.movie.count({ where: { wishlist: false, rating: null } }),
@@ -140,8 +138,26 @@ export class MovieService {
     } as const;
   }
 
-  findOne(id: number): Promise<Movie | null> {
-    return this.prisma.movie.findUnique({ where: { id } });
+  async findOne(id: number): Promise<(Movie & { tmdb?: TmdbMovie }) | null> {
+    const movie = await this.prisma.movie.findUnique({ where: { id } });
+    if (!movie) {
+      return null;
+    }
+
+    if (movie.tmdbId == null) {
+      return movie;
+    }
+
+    try {
+      const details = await this.tmdb.getMovieDetails(movie.tmdbId);
+      return { ...movie, tmdb: details } as const;
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors de la récupération des détails TMDB pour tmdbId ${movie.tmdbId}:`,
+        error,
+      );
+      return movie;
+    }
   }
 
   update(id: number, data: UpdateMovieDto): Promise<Movie> {
