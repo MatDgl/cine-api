@@ -8,5 +8,6 @@ import { TmdbModule } from '../tmdb/tmdb.module';
   imports: [TmdbModule],
   controllers: [MovieController],
   providers: [MovieService, PrismaService],
+  exports: [MovieService],
 })
 export class MovieModule {}

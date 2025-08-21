@@ -61,6 +61,18 @@ export interface TmdbSerie {
   };
 }
 
+export interface TmdbMultiRaw {
+  id: number;
+  media_type: 'movie' | 'tv' | 'person';
+  title?: string;
+  name?: string;
+  overview?: string;
+  poster_path: string | null;
+  vote_average?: number;
+  release_date?: string;
+  first_air_date?: string;
+}
+
 @Injectable()
 export class TmdbService {
   private readonly logger = new Logger(TmdbService.name);
@@ -170,6 +182,21 @@ export class TmdbService {
    */
   async searchSeries(query: string): Promise<{ results: TmdbSerie[] }> {
     return await this.fetchFromTmdb('/search/tv', { query });
+  }
+
+  /**
+   * Recherche multi (films + séries + personnes) et filtre pour ne garder que films/séries
+   */
+  async searchMulti(query: string): Promise<{ results: TmdbMultiRaw[] }> {
+    const raw = await this.fetchFromTmdb<{ results: TmdbMultiRaw[] }>(
+      '/search/multi',
+      { query },
+    );
+    return {
+      results: raw.results.filter(
+        (r) => r.media_type === 'movie' || r.media_type === 'tv',
+      ),
+    };
   }
 
   /**

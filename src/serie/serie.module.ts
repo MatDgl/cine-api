@@ -8,5 +8,6 @@ import { TmdbModule } from '../tmdb/tmdb.module';
   imports: [TmdbModule],
   controllers: [SerieController],
   providers: [SerieService, PrismaService],
+  exports: [SerieService],
 })
 export class SerieModule {}
